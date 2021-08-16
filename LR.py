@@ -98,3 +98,79 @@ clf.score(X_test, y_test)
 print(clf.coef_, clf.intercept_)
 # [[ 2.59546005 -2.81261232]] [-5.08164524]
 
+
+"""
+LR
+
+"""
+import numpy as np
+import time
+
+class LogisticRegression:
+    def __init__(self,learn_rate=0.1,max_iter=10000,tol=1e-2):
+        self.learn_rate = learn_rate
+        self.max_iter = max_iter
+        # 迭代停止阈值
+        self.tol = tol
+        # 权重
+        self.w = None
+
+    def preprocessing(self,X):
+        """将原始X末尾加上一列，该列数值全部为1,bias?"""
+        row = X.shape[0]
+        y = np.ones(row).reshape(row,1)
+        X_prepro = np.hstack((X,y))
+        return X_prepro
+
+    def sigmoid(self,x):
+        return 1 / (1+np.exp(-x))
+
+    def fit(self,X_train,y_train):
+        X = self.preprocessing(X_train)
+        y = y_train.T
+        # 初始化权重w
+        self.w = np.array([[0] * X.shape[1]], dtype=np.float)
+
+        k = 0
+        for loop in range(self.max_iter):
+            # 计算梯度
+            z = np.dot(X, self.w.T)
+            grad = X * (y-self.sigmoid(z))
+            grad = grad.sum(axis = 0)
+            # 利用梯度的绝对值作为迭代中止的条件
+            if (np.abs(grad) <= self.tol).all():
+                break
+            else:
+                # 更新权重w 梯度上升——求极大值
+                self.w += self.learn_rate * grad
+                k += 1
+        print("迭代次数：{}次".format(k))
+        print("最终梯度：{}".format(grad))
+        print("最终权重：{}".format(self.w[0]))
+
+    def predict(self,x):
+        p = self.sigmoid(np.dot(self.preprocessing(x),self.w.T))
+        # print("Y=1的概率被估计为：{:.2%}".format(p[0][0]))  # 调用score时，注释掉
+        p[np.where(p>0.5)] = 1
+        p[np.where(p<0.5)] = 0
+        return p
+    
+    def score(self,X,y):
+        y_c = self.predict(X)
+        error_rate = np.sum(np.abs(y_c-y.T)) / y_c.shape[0]
+        return 1 - error_rate
+
+# 训练数据集
+X_train = np.array([[3, 3, 3], [4, 3, 2], [2, 1, 2], [1, 1, 1], [-1, 0, 1],
+                    [2, -2, 1]])
+y_train = np.array([[1, 1, 1, 0, 0, 0]])
+# 构建实例，进行训练
+clf = LogisticRegression()
+clf.fit(X_train, y_train)
+
+"""
+迭代次数：3232次
+最终梯度：[ 0.00144779  0.00046133  0.00490279 -0.00999848]
+最终权重：[  2.96908597   1.60115396   5.04477438 -13.43744079]
+
+"""
